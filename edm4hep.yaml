@@ -78,8 +78,72 @@ components:
         ObjectID(const podio::ObjectID& id ): index(id.index), collectionID(id.collectionID) {}\n
       "
 
+   #---- Fixed size string with less than 32 chars
+    edm4hep::String32 :
+      cstr : std::array<char,32>
+      ExtraCode :
+        declaration: "
+        String32() : cstr({0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}) {}\n
+        String32(std::string s) : cstr({0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}) {\n
+          unsigned i = 0, N = (s.size() < 32 ? s.size() : 32 - 1);\n
+          for (; i < N; ++i) {\n
+            cstr[i] = s[i];\n
+          }\n
+          cstr[i] = 0;\n
+        }\n
+        String32(const char *c) : cstr({0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}) {\n
+          unsigned i = 0, N = (strlen(c) < 32 ? strlen(c) : 32 - 1);\n
+          for (; i < N; ++i) {\n
+            cstr[i] = c[i];\n
+          }\n
+          cstr[i] = 0;\n
+        }\n
+        String32(float f) { std::sprintf( &cstr[0] ,\"%20.20e\", f ) ;  }\n
+        String32(double d){ std::sprintf( &cstr[0] ,\"%20.20e\", d ) ;  }\n
+        String32(long l)  { std::sprintf( &cstr[0] ,\"%20li\"  , l ) ;  }\n
+        String32(int i)   { std::sprintf( &cstr[0] ,\"%20i\"   , i ) ;  }\n
+        operator std::string_view() const { return std::string_view(cstr.data()); }\n
+        operator const char * () const { return cstr.data(); }\n
+        const char * c_str() const { return cstr.data(); }\n
+        std::string_view strv() const { return std::string_view(cstr.data()); }\n
+        int    toi() const {  return std::stoi( std::string(cstr.data()) ) ;  }\n
+        long   tol() const {  return std::stol( std::string(cstr.data()) ) ;  }\n
+        float  tof() const {  return std::stof( std::string(cstr.data()) ) ;  }\n
+        double tod() const {  return std::stod( std::string(cstr.data()) ) ;  }\n
+        "
+#=================================================================================================================
 
 datatypes :
+
+  edm4hep::RunHeader:
+    Description: "The run header with basic meta data."
+    Author : "F.Gaede, DESY"
+    Members:
+      - int runNumber            //run number
+      - std::string detectorName //name of the detector setup used in the simulation. 
+      - std::string description  //description of the simulation, physics channels etc. 
+    VectorMembers:
+      - edm4hep::String32 activeSubdetectors //active subdetectors used in the simulation.
+      - edm4hep::String32 collectionNames //collection names
+      - edm4hep::String32 collectionTypes //collection Types
+
+  edm4hep::EventHeader:
+    Description: "The event header"
+    Author : "F.Gaede, DESY"
+    Members:
+      - int eventNumber          //event number
+      - int runNumber            //run number
+      - long long timeStamp      //time stamp
+
+  edm4hep::MetaDataParameters:
+    Description: "Named meta data parameters - stored as string32 vectors"
+    Author : "F.Gaede, DESY"
+    Members:
+      - int                collectionID     //the ID of the collection these parameters referr to
+      - edm4hep::String32  name             //parameter name
+    VectorMembers:
+      - edm4hep::String32 parameters //parameter values
+
 
   edm4hep::MCParticle:
     Description: "The Monte Carlo particle - based on the lcio::MCParticle."
